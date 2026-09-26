@@ -17,6 +17,9 @@
 		B100000000000000000000B8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AA /* Assets.xcassets */; };
 		B100000000000000000000B9 /* MarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AB /* MarkdownView.swift */; };
 		B100000000000000000000BA /* FileViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AC /* FileViews.swift */; };
+		B100000000000000000000BB /* UserViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AD /* UserViews.swift */; };
+		B100000000000000000000BC /* FeedViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AE /* FeedViews.swift */; };
+		B100000000000000000000BD /* IssueDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AF /* IssueDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +34,9 @@
 		B100000000000000000000AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B100000000000000000000AB /* MarkdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownView.swift; sourceTree = "<group>"; };
 		B100000000000000000000AC /* FileViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileViews.swift; sourceTree = "<group>"; };
+		B100000000000000000000AD /* UserViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserViews.swift; sourceTree = "<group>"; };
+		B100000000000000000000AE /* FeedViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedViews.swift; sourceTree = "<group>"; };
+		B100000000000000000000AF /* IssueDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDetailView.swift; sourceTree = "<group>"; };
 		B100000000000000000000A9 /* GitHubApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitHubApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -67,6 +73,9 @@
 				B100000000000000000000AA /* Assets.xcassets */,
 				B100000000000000000000AB /* MarkdownView.swift */,
 				B100000000000000000000AC /* FileViews.swift */,
+				B100000000000000000000AD /* UserViews.swift */,
+				B100000000000000000000AE /* FeedViews.swift */,
+				B100000000000000000000AF /* IssueDetailView.swift */,
 			);
 			path = GitHubApp;
 			sourceTree = "<group>";
@@ -157,6 +166,9 @@
 				B100000000000000000000B7 /* SettingsView.swift in Sources */,
 				B100000000000000000000B9 /* MarkdownView.swift in Sources */,
 				B100000000000000000000BA /* FileViews.swift in Sources */,
+				B100000000000000000000BB /* UserViews.swift in Sources */,
+				B100000000000000000000BC /* FeedViews.swift in Sources */,
+				B100000000000000000000BD /* IssueDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

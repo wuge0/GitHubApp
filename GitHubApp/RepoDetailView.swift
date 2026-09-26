@@ -14,6 +14,23 @@ struct RepoDetailView: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 10) {
+                    NavigationLink(destination: UserPageView(login: repo.owner.login)) {
+                        HStack(spacing: 8) {
+                            AsyncImage(url: URL(string: repo.owner.avatarUrl)) { image in
+                                image.resizable().scaledToFill()
+                            } placeholder: {
+                                Color.secondary.opacity(0.15)
+                            }
+                            .frame(width: 26, height: 26)
+                            .clipShape(Circle())
+                            Text(repo.owner.login)
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                     Text(repo.fullName)
                         .font(.title3.bold())
                     if let d = repo.description, !d.isEmpty {
@@ -78,16 +95,22 @@ struct RepoDetailView: View {
                     Text("（没有 Issue）").foregroundColor(.secondary)
                 } else {
                     ForEach(issues) { issue in
-                        HStack(alignment: .top, spacing: 8) {
-                            Image(systemName: issue.state == "open" ? "circlebadge" : "checkmark.circle.fill")
-                                .foregroundColor(issue.state == "open" ? .green : .purple)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(issue.title)
-                                    .font(.subheadline)
-                                    .lineLimit(2)
-                                Text("#\(issue.number) · \(issue.user.login)")
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
+                        NavigationLink(
+                            destination: IssueDetailView(
+                                owner: repo.owner.login, repo: repo.name, number: issue.number
+                            )
+                        ) {
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: issue.state == "open" ? "circlebadge" : "checkmark.circle.fill")
+                                    .foregroundColor(issue.state == "open" ? .green : .purple)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(issue.title)
+                                        .font(.subheadline)
+                                        .lineLimit(2)
+                                    Text("#\(issue.number) · \(issue.user.login)")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
                             }
                         }
                     }

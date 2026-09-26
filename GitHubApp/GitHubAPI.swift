@@ -46,6 +46,82 @@ final class GitHubAPI {
         return try decoder.decode([Issue].self, from: data)
     }
 
+    // MARK: - 用户
+
+    func me(token: String) async throws -> User {
+        let data = try await get("/user", token: token)
+        return try decoder.decode(User.self, from: data)
+    }
+
+    func user(login: String, token: String) async throws -> User {
+        let data = try await get("/users/\(login)", token: token)
+        return try decoder.decode(User.self, from: data)
+    }
+
+    func userRepos(login: String, token: String) async throws -> [Repo] {
+        let data = try await get("/users/\(login)/repos?per_page=50&sort=updated", token: token)
+        return try decoder.decode([Repo].self, from: data)
+    }
+
+    /// 当前登录者的仓库（含私有）
+    func myRepos(token: String) async throws -> [Repo] {
+        let data = try await get("/user/repos?per_page=50&sort=updated", token: token)
+        return try decoder.decode([Repo].self, from: data)
+    }
+
+    func starred(login: String, token: String) async throws -> [Repo] {
+        let data = try await get("/users/\(login)/starred?per_page=50&sort=updated", token: token)
+        return try decoder.decode([Repo].self, from: data)
+    }
+
+    func followers(login: String, token: String) async throws -> [User] {
+        let data = try await get("/users/\(login)/followers?per_page=50", token: token)
+        return try decoder.decode([User].self, from: data)
+    }
+
+    func following(login: String, token: String) async throws -> [User] {
+        let data = try await get("/users/\(login)/following?per_page=50", token: token)
+        return try decoder.decode([User].self, from: data)
+    }
+
+    func events(login: String, token: String) async throws -> [Event] {
+        let data = try await get("/users/\(login)/events?per_page=30", token: token)
+        return try decoder.decode([Event].self, from: data)
+    }
+
+    // MARK: - 趋势（GitHub 无官方 trending API，用 search 按创建时间+星数模拟）
+
+    func trending(language: String?, days: Int, token: String) async throws -> [Repo] {
+        let from = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        var q = "created:>\(fmt.string(from: from))"
+        if let l = language, !l.isEmpty, l != "全部" { q += " language:\(l)" }
+        let enc = q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? q
+        let data = try await get(
+            "/search/repositories?q=\(enc)&sort=stars&order=desc&per_page=30", token: token
+        )
+        return try decoder.decode(SearchResponse.self, from: data).items
+    }
+
+    // MARK: - Issue 与通知
+
+    func issueDetail(owner: String, repo: String, number: Int, token: String) async throws -> Issue {
+        let data = try await get("/repos/\(owner)/\(repo)/issues/\(number)", token: token)
+        return try decoder.decode(Issue.self, from: data)
+    }
+
+    func issueComments(owner: String, repo: String, number: Int, token: String) async throws -> [Comment] {
+        let data = try await get("/repos/\(owner)/\(repo)/issues/\(number)/comments?per_page=50", token: token)
+        return try decoder.decode([Comment].self, from: data)
+    }
+
+    func notifications(token: String) async throws -> [GHNotification] {
+        let data = try await get("/notifications?per_page=50", token: token)
+        return try decoder.decode([GHNotification].self, from: data)
+    }
+
     /// 目录列表
     func contents(owner: String, repo: String, path: String, token: String) async throws -> [ContentItem] {
         let p = path.isEmpty ? "" : "/\(path)"
