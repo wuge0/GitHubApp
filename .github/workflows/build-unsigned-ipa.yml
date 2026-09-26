@@ -1,0 +1,97 @@
+# GitHub Actions 无签名构建 iOS IPA（TrollStore / 越狱侧载用）
+#
+# 零签名、零证书、零付费账号。产出未签名 .ipa，TrollStore 或 AppSync 直接装。
+
+name: Build unsigned IPA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SCHEME: GitHubApp
+  WORKSPACE: ""                  # 纯 .xcodeproj 工程，留空
+  PROJECT: GitHubApp.xcodeproj
+
+jobs:
+  build:
+    name: Build unsigned IPA
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 查看 Xcode 与 SDK
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i ios || true
+
+      - name: Archive（跳过签名）
+        run: |
+          set -euo pipefail
+          ARCHIVE="$RUNNER_TEMP/${{ env.SCHEME }}.xcarchive"
+
+          if [ -n "${{ env.WORKSPACE }}" ] && [ -f "${{ env.WORKSPACE }}" ]; then
+            xcodebuild archive \
+              -workspace "${{ env.WORKSPACE }}" \
+              -scheme "${{ env.SCHEME }}" \
+              -configuration Release \
+              -destination 'generic/platform=iOS' \
+              -archivePath "$ARCHIVE" \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO \
+              DEVELOPMENT_TEAM="" \
+              PROVISIONING_PROFILE_SPECIFIER=""
+          else
+            xcodebuild archive \
+              -project "${{ env.PROJECT }}" \
+              -scheme "${{ env.SCHEME }}" \
+              -configuration Release \
+              -destination 'generic/platform=iOS' \
+              -archivePath "$ARCHIVE" \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO \
+              DEVELOPMENT_TEAM="" \
+              PROVISIONING_PROFILE_SPECIFIER=""
+          fi
+
+          echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
+
+      - name: 打包 IPA（Payload/App.app → zip）
+        run: |
+          set -euo pipefail
+          APP_DIR="${{ env.ARCHIVE }}/Products/Applications"
+          ls "$APP_DIR"
+
+          IPA_DIR="$RUNNER_TEMP/ipa"
+          rm -rf "$IPA_DIR"; mkdir -p "$IPA_DIR/Payload"
+          cp -R "$APP_DIR"/*.app "$IPA_DIR/Payload/"
+
+          cd "$IPA_DIR"
+          zip -qry "$RUNNER_TEMP/${{ env.SCHEME }}-unsigned.ipa" Payload
+          ls -lh "$RUNNER_TEMP"
+
+      - name: 上传 IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SCHEME }}-unsigned
+          path: ${{ runner.temp }}/*.ipa
+          retention-days: 30
+
+      - name: 上传 dSYM
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SCHEME }}-dsym
+          path: ${{ env.ARCHIVE }}/dSYMs
+          if-no-files-found: ignore
+          retention-days: 30
