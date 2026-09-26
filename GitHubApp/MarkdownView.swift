@@ -221,7 +221,7 @@ enum MDParser {
             }
 
             // 有序列表
-            if let rest = orderedBody(t) {
+            if orderedBody(t) != nil {
                 flushPara()
                 var items: [String] = []
                 while i < lines.count,

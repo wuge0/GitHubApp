@@ -9,7 +9,7 @@ struct FileBrowserView: View {
     @AppStorage("gh_token") private var token: String = ""
     @State private var items: [ContentItem] = []
     @State private var loading = true
-    @State private var error: String?
+    @State private var errorText: String?
 
     private var sorted: [ContentItem] {
         items.sorted { a, b in
@@ -29,7 +29,7 @@ struct FileBrowserView: View {
                     ProgressView()
                     Text("加载中…").foregroundColor(.secondary)
                 }
-            } else if let e = error {
+            } else if let e = errorText {
                 Text(e).font(.caption).foregroundColor(.secondary)
             } else if sorted.isEmpty {
                 Text("（空目录）").foregroundColor(.secondary)
@@ -65,7 +65,7 @@ struct FileBrowserView: View {
             )
         } catch {
             items = []
-            error = "加载失败：\(error.localizedDescription)"
+            errorText = "加载失败：\(error.localizedDescription)"
         }
     }
 }
@@ -80,13 +80,13 @@ struct FileTextView: View {
     @State private var text = ""
     @State private var loading = true
     @State private var showRaw = false
-    @State private var error: String?
+    @State private var errorText: String?
 
     var body: some View {
         Group {
             if loading {
                 ProgressView()
-            } else if let e = error {
+            } else if let e = errorText {
                 Text(e).font(.caption).foregroundColor(.secondary)
             } else if item.isMarkdown && !showRaw {
                 ScrollView {
@@ -127,7 +127,7 @@ struct FileTextView: View {
             )
         } catch {
             text = ""
-            error = "加载失败：\(error.localizedDescription)"
+            errorText = "加载失败：\(error.localizedDescription)"
         }
     }
 }
