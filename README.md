@@ -4,12 +4,33 @@
 
 ## 功能
 
-- **搜索仓库**：关键词搜索，按 star 排序，显示 owner 头像、描述、star / fork / 语言
-- **仓库详情**：基本信息（star / fork / open issues）、README 全文（base64 解码）、可在 Safari 打开
-- **最近 Issue**：列出该仓库最近 20 条 issue / PR，区分 open（绿）与 closed（紫）
-- **设置**：粘贴 GitHub Personal Access Token（可选）
+五个 Tab：**搜索 / 趋势 / 动态 / 我的 / 设置**
+
+### 搜索
+- 关键词搜索仓库，按 star 排序，显示 owner 头像、描述、star / fork / 语言
+
+### 趋势
+- 用 `search` 接口按「创建时间 + star 数」模拟 Trending（GitHub 无官方 trending API）
+- 可切 今日 / 本周 / 本月，可按语言筛选（Swift / Kotlin / Python / Go / Rust …）
+
+### 动态
+- **动态**：`/users/{login}/events`，按事件类型给图标与中文动词（star / fork / push / issue / PR / release）
+- **通知**：`/notifications`，区分未读，Issue / PR 类可直接点进详情
+
+### 仓库详情
+- 基本信息（star / fork / open issues），点 owner 头像进用户主页
+- **README 渲染**：自写块级解析器 + iOS 15 `AttributedString(markdown:)` 处理行内语法，支持标题 / 代码块 / 列表 / 引用 / 分割线 / 图片，可切「原文」
+- **浏览文件**：目录递归进入，`.md` 走渲染器，其它文件显示原文
+- **最近 Issue**：可点进 Issue 详情看正文（Markdown）与评论列表
+
+### 个人中心 / 用户主页
+- 未登录引导填 Token；登录后显示头像、昵称、bio、仓库 / 粉丝 / 关注数
+- 四个分段：**仓库 / Star / 粉丝 / 关注**，点用户可继续下钻
+
+### 设置
+- 粘贴 GitHub Personal Access Token（可选）
   - 不填：匿名访问公开数据，限额 **60 次/小时**
-  - 填上：限额 **5000 次/小时**，且可访问私有仓库
+  - 填上：限额 **5000 次/小时**，可访问私有仓库、读通知与动态
 
 ## 工程结构
 
@@ -17,12 +38,19 @@
 GitHubApp.xcodeproj/                 Xcode 工程 + 共享 scheme
 GitHubApp/
   GitHubAppApp.swift                 @main 入口
-  ContentView.swift                  TabView 根容器（仓库 / 设置）
-  Models.swift                       Repo / Issue / Owner 等 Codable 模型
-  GitHubAPI.swift                    网络层：搜索、issues、readme
+  ContentView.swift                  TabView 根容器（5 个 Tab）
+  Models.swift                       Repo / Issue / User / Event / Comment / Notification
+                                     + timeAgo、parseIssueURL 工具函数
+  GitHubAPI.swift                    网络层：搜索、trending、事件、通知、issue、目录、文件内容
   SearchView.swift                   搜索页 + 仓库行
-  RepoDetailView.swift               仓库详情（README + Issues）
+  RepoDetailView.swift               仓库详情（README / 文件 / Issues）
+  UserViews.swift                    个人中心 + 用户主页 + 用户行
+  FeedViews.swift                    趋势 + 动态 + 通知
+  IssueDetailView.swift              Issue 正文与评论
+  MarkdownView.swift                 Markdown 块级解析器与渲染器（零依赖）
+  FileViews.swift                    仓库文件浏览与查看
   SettingsView.swift                 Token 设置
+  Assets.xcassets/AppIcon...         应用图标（黑白猫头）
   Info.plist                         应用元信息
 .github/workflows/
   build-unsigned-ipa.yml             无签名构建 IPA
@@ -41,5 +69,5 @@ GitHubApp/
 
 - 部署目标 iOS 15.0；Bundle ID `com.example.githubapp`。
 - 全程 `CODE_SIGNING_ALLOWED=NO`，不依赖 Apple 开发者账号 / 证书 / 描述文件。
-- README 以等宽字体原样展示（未做 Markdown 富文本渲染）。
-- 应用未配置图标（无 Assets.xcassets），装上后是默认空白图标。
+- 零第三方依赖：Markdown 渲染用系统 `AttributedString`，网络用 `URLSession`，图片用 `AsyncImage`。
+- 已知限制：Markdown 表格 / 嵌套列表不渲染；行内链接在 `Text` 中可能不可点；超过 400KB 的文件只给提示不下载。
