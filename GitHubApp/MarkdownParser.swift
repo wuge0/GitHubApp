@@ -54,10 +54,10 @@ enum MDInline {
         }
     }
 
-    private static func replace(_ s: String, _ pattern: String, _ with tpl: String) -> String {
+    private static func replace(_ s: String, _ pattern: String, _ template: String) -> String {
         guard let re = try? NSRegularExpression(pattern: pattern, options: []) else { return s }
         let r = NSRange(s.startIndex..., in: s)
-        return re.stringByReplacingMatches(in: s, options: [], range: r, withTemplate: tpl)
+        return re.stringByReplacingMatches(in: s, options: [], range: r, withTemplate: template)
     }
 }
 
