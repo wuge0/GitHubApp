@@ -236,7 +236,7 @@ enum MDParser {
         let depth = indent.count / 2
         let t = String(s.dropFirst(indent.count))
         guard t.hasPrefix("- ") || t.hasPrefix("* ") || t.hasPrefix("+ ") else { return nil }
-        var body = String(t.dropFirst(2))
+        let body = String(t.dropFirst(2))
         if body.hasPrefix("[ ] ") {
             return MDListItem(depth: depth, text: String(body.dropFirst(4)), checked: false)
         }

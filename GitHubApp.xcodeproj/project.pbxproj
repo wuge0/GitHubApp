@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B100000000000000000000B8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AA /* Assets.xcassets */; };
 		B100000000000000000000B1 /* GitHubAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A1 /* GitHubAppApp.swift */; };
 		B100000000000000000000B2 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A2 /* Models.swift */; };
 		B100000000000000000000B3 /* GitHubAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000A3 /* GitHubAPI.swift */; };
@@ -45,6 +46,7 @@
 		B100000000000000000000C7 /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
 		B100000000000000000000C8 /* TrendingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendingView.swift; sourceTree = "<group>"; };
 		B100000000000000000000C9 /* DynamicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicView.swift; sourceTree = "<group>"; };
+		B100000000000000000000AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B100000000000000000000A9 /* GitHubApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitHubApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -88,6 +90,7 @@
 				B100000000000000000000C7 /* MarkdownParser.swift */,
 				B100000000000000000000C8 /* TrendingView.swift */,
 				B100000000000000000000C9 /* DynamicView.swift */,
+				B100000000000000000000AA /* Assets.xcassets */,
 			);
 			path = GitHubApp;
 			sourceTree = "<group>";
@@ -158,6 +161,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B100000000000000000000B8 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -246,6 +250,7 @@
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = NO;
@@ -270,6 +275,7 @@
 				CODE_SIGN_STYLE = Manual;
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = NO;
