@@ -46,6 +46,25 @@ final class GitHubAPI {
         return try decoder.decode([Issue].self, from: data)
     }
 
+    /// 目录列表
+    func contents(owner: String, repo: String, path: String, token: String) async throws -> [ContentItem] {
+        let p = path.isEmpty ? "" : "/\(path)"
+        let data = try await get("/repos/\(owner)/\(repo)/contents\(p)", token: token)
+        return try decoder.decode([ContentItem].self, from: data)
+    }
+
+    /// 单个文件的文本内容
+    func fileText(owner: String, repo: String, path: String, token: String) async throws -> String {
+        let p = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
+        let data = try await get("/repos/\(owner)/\(repo)/contents/\(p)", token: token)
+        struct File: Codable { let content: String; let encoding: String }
+        let f = try decoder.decode(File.self, from: data)
+        guard f.encoding == "base64" else { return f.content }
+        let clean = f.content.replacingOccurrences(of: "\n", with: "")
+        guard let d = Data(base64Encoded: clean) else { return f.content }
+        return String(data: d, encoding: .utf8) ?? f.content
+    }
+
     func readme(owner: String, repo: String, token: String) async throws -> String {
         let data = try await get("/repos/\(owner)/\(repo)/readme", token: token)
         struct Readme: Codable { let content: String; let encoding: String }

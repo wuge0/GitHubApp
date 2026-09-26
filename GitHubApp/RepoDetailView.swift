@@ -8,6 +8,7 @@ struct RepoDetailView: View {
     @State private var issues: [Issue] = []
     @State private var loading = true
     @State private var note: String?
+    @State private var showRawReadme = false
 
     var body: some View {
         List {
@@ -33,16 +34,40 @@ struct RepoDetailView: View {
                 .padding(.vertical, 4)
             }
 
-            Section("README") {
+            Section {
                 if loading {
                     HStack(spacing: 8) {
                         ProgressView()
                         Text("加载中…").foregroundColor(.secondary)
                     }
-                } else {
-                    Text(readme.isEmpty ? "（该仓库没有 README）" : readme)
+                } else if readme.isEmpty {
+                    Text("（该仓库没有 README）")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                } else if showRawReadme {
+                    Text(readme)
                         .font(.system(.footnote, design: .monospaced))
                         .textSelection(.enabled)
+                } else {
+                    MarkdownView(text: readme)
+                }
+            } header: {
+                HStack {
+                    Text("README")
+                    Spacer()
+                    if !readme.isEmpty {
+                        Button(showRawReadme ? "渲染" : "原文") { showRawReadme.toggle() }
+                            .font(.caption)
+                            .buttonStyle(.borderless)
+                    }
+                }
+            }
+
+            Section {
+                NavigationLink(
+                    destination: FileBrowserView(owner: repo.owner.login, repo: repo.name, path: "")
+                ) {
+                    Label("浏览文件", systemImage: "folder")
                 }
             }
 

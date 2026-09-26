@@ -49,3 +49,18 @@ struct SearchResponse: Codable {
         case totalCount = "total_count"
     }
 }
+
+/// 仓库目录条目（/repos/{owner}/{repo}/contents/{path}）
+struct ContentItem: Codable, Identifiable, Hashable {
+    let name: String
+    let path: String
+    let type: String
+    let size: Int?
+
+    var id: String { path }
+    var isDir: Bool { type == "dir" }
+    var isMarkdown: Bool {
+        let n = name.lowercased()
+        return n.hasSuffix(".md") || n.hasSuffix(".markdown") || n.hasSuffix(".mdown")
+    }
+}
