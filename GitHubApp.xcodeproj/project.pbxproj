@@ -17,8 +17,13 @@
 		B100000000000000000000B9 /* MarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AB /* MarkdownView.swift */; };
 		B100000000000000000000BA /* FileViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AC /* FileViews.swift */; };
 		B100000000000000000000BB /* UserViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AD /* UserViews.swift */; };
-		B100000000000000000000BC /* FeedViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AE /* FeedViews.swift */; };
 		B100000000000000000000BD /* IssueDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000AF /* IssueDetailView.swift */; };
+		B100000000000000000000D4 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000C4 /* TokenStore.swift */; };
+		B100000000000000000000D5 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000C5 /* Extensions.swift */; };
+		B100000000000000000000D6 /* PlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000C6 /* PlaceholderView.swift */; };
+		B100000000000000000000D7 /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000C7 /* MarkdownParser.swift */; };
+		B100000000000000000000D8 /* TrendingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000C8 /* TrendingView.swift */; };
+		B100000000000000000000D9 /* DynamicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000C9 /* DynamicView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,8 +38,13 @@
 		B100000000000000000000AB /* MarkdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownView.swift; sourceTree = "<group>"; };
 		B100000000000000000000AC /* FileViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileViews.swift; sourceTree = "<group>"; };
 		B100000000000000000000AD /* UserViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserViews.swift; sourceTree = "<group>"; };
-		B100000000000000000000AE /* FeedViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedViews.swift; sourceTree = "<group>"; };
 		B100000000000000000000AF /* IssueDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IssueDetailView.swift; sourceTree = "<group>"; };
+		B100000000000000000000C4 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
+		B100000000000000000000C5 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		B100000000000000000000C6 /* PlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderView.swift; sourceTree = "<group>"; };
+		B100000000000000000000C7 /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
+		B100000000000000000000C8 /* TrendingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendingView.swift; sourceTree = "<group>"; };
+		B100000000000000000000C9 /* DynamicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicView.swift; sourceTree = "<group>"; };
 		B100000000000000000000A9 /* GitHubApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitHubApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -71,8 +81,13 @@
 				B100000000000000000000AB /* MarkdownView.swift */,
 				B100000000000000000000AC /* FileViews.swift */,
 				B100000000000000000000AD /* UserViews.swift */,
-				B100000000000000000000AE /* FeedViews.swift */,
 				B100000000000000000000AF /* IssueDetailView.swift */,
+				B100000000000000000000C4 /* TokenStore.swift */,
+				B100000000000000000000C5 /* Extensions.swift */,
+				B100000000000000000000C6 /* PlaceholderView.swift */,
+				B100000000000000000000C7 /* MarkdownParser.swift */,
+				B100000000000000000000C8 /* TrendingView.swift */,
+				B100000000000000000000C9 /* DynamicView.swift */,
 			);
 			path = GitHubApp;
 			sourceTree = "<group>";
@@ -163,8 +178,13 @@
 				B100000000000000000000B9 /* MarkdownView.swift in Sources */,
 				B100000000000000000000BA /* FileViews.swift in Sources */,
 				B100000000000000000000BB /* UserViews.swift in Sources */,
-				B100000000000000000000BC /* FeedViews.swift in Sources */,
 				B100000000000000000000BD /* IssueDetailView.swift in Sources */,
+				B100000000000000000000D4 /* TokenStore.swift in Sources */,
+				B100000000000000000000D5 /* Extensions.swift in Sources */,
+				B100000000000000000000D6 /* PlaceholderView.swift in Sources */,
+				B100000000000000000000D7 /* MarkdownParser.swift in Sources */,
+				B100000000000000000000D8 /* TrendingView.swift in Sources */,
+				B100000000000000000000D9 /* DynamicView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

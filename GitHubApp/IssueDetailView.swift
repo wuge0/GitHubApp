@@ -5,22 +5,23 @@ struct IssueDetailView: View {
     let repo: String
     let number: Int
 
-    @AppStorage("gh_token") private var token: String = ""
+    @ObservedObject private var auth = TokenStore.shared
+
     @State private var issue: Issue?
     @State private var comments: [Comment] = []
     @State private var loading = true
     @State private var errorText: String?
 
+    private var base: MDBase {
+        MDBase(owner: owner, repo: repo, branch: "HEAD")
+    }
+
     var body: some View {
         Group {
             if loading && issue == nil {
-                VStack { Spacer(); ProgressView("加载中…"); Spacer() }
+                LoadingView()
             } else if let e = errorText, issue == nil {
-                VStack(spacing: 12) {
-                    Text(e).foregroundColor(.secondary).multilineTextAlignment(.center)
-                    Button("重试") { Task { await load() } }.buttonStyle(.borderedProminent)
-                }
-                .padding()
+                ErrorStateView(message: e) { Task { await load() } }
             } else if let i = issue {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
@@ -39,7 +40,7 @@ struct IssueDetailView: View {
 
                         // 正文
                         if let body = i.body, !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            MarkdownView(text: body)
+                            MarkdownView(text: body, base: base)
                         } else {
                             Text("（该 Issue 没有正文）")
                                 .font(.caption)
@@ -67,7 +68,7 @@ struct IssueDetailView: View {
                                             .foregroundColor(.secondary)
                                     }
                                     if let b = c.body, !b.isEmpty {
-                                        MarkdownView(text: b)
+                                        MarkdownView(text: b, base: base)
                                     }
                                 }
                                 .padding(.vertical, 6)
@@ -85,12 +86,13 @@ struct IssueDetailView: View {
         .task { await load() }
     }
 
+    @MainActor
     private func load() async {
         loading = true
         defer { loading = false }
         do {
             issue = try await GitHubAPI.shared.issueDetail(
-                owner: owner, repo: repo, number: number, token: token
+                owner: owner, repo: repo, number: number, token: auth.token
             )
             errorText = nil
         } catch {
@@ -98,7 +100,7 @@ struct IssueDetailView: View {
         }
         do {
             comments = try await GitHubAPI.shared.issueComments(
-                owner: owner, repo: repo, number: number, token: token
+                owner: owner, repo: repo, number: number, token: auth.token
             )
         } catch {
             comments = []

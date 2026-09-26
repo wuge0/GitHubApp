@@ -1,69 +1,71 @@
 import SwiftUI
 
 struct SearchView: View {
-    @AppStorage("gh_token") private var token: String = ""
+    @ObservedObject private var auth = TokenStore.shared
+
     @State private var query = "swift"
     @State private var repos: [Repo] = []
+    @State private var page = 1
+    @State private var hasMore = false
     @State private var loading = false
-    @State private var errorMessage: String?
+    @State private var errorText: String?
 
     var body: some View {
         NavigationView {
             content
                 .navigationTitle("GitHub")
                 .searchable(text: $query, prompt: "搜索仓库")
-                .onSubmit(of: .search) { Task { await search() } }
+                .onSubmit(of: .search) { Task { await load(reset: true) } }
         }
-        .task { await search() }
+        // token 变化后自动重搜（比如刚在设置里填完 Token）
+        .task(id: auth.token) { await load(reset: true) }
     }
 
     @ViewBuilder
     private var content: some View {
-        if let err = errorMessage {
-            VStack(spacing: 14) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.largeTitle)
-                    .foregroundColor(.orange)
-                Text(err)
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.secondary)
-                Button("重试") { Task { await search() } }
-                    .buttonStyle(.borderedProminent)
-            }
-            .padding()
+        if let err = errorText, repos.isEmpty {
+            ErrorStateView(message: err) { Task { await load(reset: true) } }
         } else if repos.isEmpty {
-            VStack(spacing: 12) {
-                if loading {
-                    ProgressView("加载中…")
-                } else {
-                    Image(systemName: "magnifyingglass")
-                        .font(.largeTitle)
-                        .foregroundColor(.secondary)
-                    Text("输入关键词搜索 GitHub 仓库")
-                        .foregroundColor(.secondary)
-                }
+            if loading {
+                LoadingView()
+            } else {
+                EmptyStateView(systemImage: "magnifyingglass", text: "输入关键词搜索 GitHub 仓库")
             }
         } else {
-            List(repos) { repo in
-                NavigationLink(destination: RepoDetailView(repo: repo)) {
-                    RepoRow(repo: repo)
+            List {
+                ForEach(repos) { repo in
+                    NavigationLink(destination: RepoDetailView(repo: repo)) {
+                        RepoRow(repo: repo)
+                    }
                 }
+                MoreButton(hasMore: hasMore, loading: loading) { loadMore() }
             }
             .listStyle(.plain)
+            .refreshable { await load(reset: true) }
         }
     }
 
-    private func search() async {
+    private func loadMore() {
+        guard hasMore, !loading else { return }
+        page += 1
+        Task { await load(reset: false) }
+    }
+
+    @MainActor
+    private func load(reset: Bool) async {
         let q = query.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else { return }
+        if reset { page = 1 }
         loading = true
-        errorMessage = nil
+        errorText = nil
         defer { loading = false }
         do {
-            repos = try await GitHubAPI.shared.searchRepos(query: q, token: token)
+            let r = try await GitHubAPI.shared.searchRepos(query: q, page: page, token: auth.token)
+            hasMore = r.count >= 30
+            repos = reset ? r : repos + r
         } catch {
-            repos = []
-            errorMessage = error.localizedDescription
+            if reset { repos = [] }
+            errorText = "加载失败：\(error.localizedDescription)"
         }
     }
 }
@@ -92,8 +94,8 @@ struct RepoRow: View {
                         .lineLimit(2)
                 }
                 HStack(spacing: 14) {
-                    Label("\(repo.stargazersCount)", systemImage: "star")
-                    Label("\(repo.forksCount)", systemImage: "tuningfork")
+                    Label(compactCount(repo.stargazersCount), systemImage: "star")
+                    Label(compactCount(repo.forksCount), systemImage: "tuningfork")
                     if let lang = repo.language {
                         Text(lang)
                     }

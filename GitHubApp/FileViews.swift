@@ -4,9 +4,11 @@ import SwiftUI
 struct FileBrowserView: View {
     let owner: String
     let repo: String
-    let path: String
+    var branch: String = "HEAD"
+    var path: String = ""
 
-    @AppStorage("gh_token") private var token: String = ""
+    @ObservedObject private var auth = TokenStore.shared
+
     @State private var items: [ContentItem] = []
     @State private var loading = true
     @State private var errorText: String?
@@ -37,13 +39,17 @@ struct FileBrowserView: View {
                 ForEach(sorted) { item in
                     if item.isDir {
                         NavigationLink(
-                            destination: FileBrowserView(owner: owner, repo: repo, path: item.path)
+                            destination: FileBrowserView(
+                                owner: owner, repo: repo, branch: branch, path: item.path
+                            )
                         ) {
                             Label(item.name, systemImage: "folder")
                         }
                     } else {
                         NavigationLink(
-                            destination: FileTextView(owner: owner, repo: repo, item: item)
+                            destination: FileTextView(
+                                owner: owner, repo: repo, branch: branch, item: item
+                            )
                         ) {
                             Label(item.name, systemImage: item.isMarkdown ? "doc.richtext" : "doc")
                         }
@@ -56,12 +62,13 @@ struct FileBrowserView: View {
         .task { await load() }
     }
 
+    @MainActor
     private func load() async {
         loading = true
         defer { loading = false }
         do {
             items = try await GitHubAPI.shared.contents(
-                owner: owner, repo: repo, path: path, token: token
+                owner: owner, repo: repo, path: path, token: auth.token
             )
         } catch {
             items = []
@@ -74,9 +81,11 @@ struct FileBrowserView: View {
 struct FileTextView: View {
     let owner: String
     let repo: String
+    let branch: String
     let item: ContentItem
 
-    @AppStorage("gh_token") private var token: String = ""
+    @ObservedObject private var auth = TokenStore.shared
+
     @State private var text = ""
     @State private var loading = true
     @State private var showRaw = false
@@ -90,7 +99,11 @@ struct FileTextView: View {
                 Text(e).font(.caption).foregroundColor(.secondary)
             } else if item.isMarkdown && !showRaw {
                 ScrollView {
-                    MarkdownView(text: text).padding()
+                    MarkdownView(
+                        text: text,
+                        base: MDBase(owner: owner, repo: repo, branch: branch)
+                    )
+                    .padding()
                 }
             } else {
                 ScrollView {
@@ -114,16 +127,17 @@ struct FileTextView: View {
         .task { await load() }
     }
 
+    @MainActor
     private func load() async {
         loading = true
         defer { loading = false }
         if let size = item.size, size > 400_000 {
-            text = "（文件 \(size / 1024) KB，超过 GitHub Contents API 的 1MB/400KB 文本限制，请到 Safari 查看）"
+            text = "（文件 \(size / 1024) KB，超过 GitHub Contents API 的 400KB 文本限制，请到 Safari 查看）"
             return
         }
         do {
             text = try await GitHubAPI.shared.fileText(
-                owner: owner, repo: repo, path: item.path, token: token
+                owner: owner, repo: repo, path: item.path, token: auth.token
             )
         } catch {
             text = ""

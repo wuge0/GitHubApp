@@ -3,12 +3,18 @@ import SwiftUI
 struct RepoDetailView: View {
     let repo: Repo
 
-    @AppStorage("gh_token") private var token: String = ""
+    @ObservedObject private var auth = TokenStore.shared
+
     @State private var readme = ""
     @State private var issues: [Issue] = []
     @State private var loading = true
     @State private var note: String?
     @State private var showRawReadme = false
+
+    /// README 里相对路径图片的解析上下文
+    private var base: MDBase {
+        MDBase(owner: repo.owner.login, repo: repo.name, branch: repo.defaultBranch ?? "HEAD")
+    }
 
     var body: some View {
         List {
@@ -37,9 +43,9 @@ struct RepoDetailView: View {
                         Text(d).font(.subheadline)
                     }
                     HStack(spacing: 16) {
-                        Label("\(repo.stargazersCount)", systemImage: "star")
-                        Label("\(repo.forksCount)", systemImage: "tuningfork")
-                        Label("\(repo.openIssuesCount)", systemImage: "exclamationmark.circle")
+                        Label(compactCount(repo.stargazersCount), systemImage: "star")
+                        Label(compactCount(repo.forksCount), systemImage: "tuningfork")
+                        Label(compactCount(repo.openIssuesCount), systemImage: "exclamationmark.circle")
                     }
                     .font(.subheadline)
                     .foregroundColor(.secondary)
@@ -66,7 +72,7 @@ struct RepoDetailView: View {
                         .font(.system(.footnote, design: .monospaced))
                         .textSelection(.enabled)
                 } else {
-                    MarkdownView(text: readme)
+                    MarkdownView(text: readme, base: base)
                 }
             } header: {
                 HStack {
@@ -82,7 +88,12 @@ struct RepoDetailView: View {
 
             Section {
                 NavigationLink(
-                    destination: FileBrowserView(owner: repo.owner.login, repo: repo.name, path: "")
+                    destination: FileBrowserView(
+                        owner: repo.owner.login,
+                        repo: repo.name,
+                        branch: repo.defaultBranch ?? "HEAD",
+                        path: ""
+                    )
                 ) {
                     Label("浏览文件", systemImage: "folder")
                 }
@@ -130,17 +141,22 @@ struct RepoDetailView: View {
         .task { await load() }
     }
 
+    @MainActor
     private func load() async {
         loading = true
         defer { loading = false }
         do {
-            readme = try await GitHubAPI.shared.readme(owner: repo.owner.login, repo: repo.name, token: token)
+            readme = try await GitHubAPI.shared.readme(
+                owner: repo.owner.login, repo: repo.name, token: auth.token
+            )
         } catch {
             readme = ""
             note = "README 加载失败：\(error.localizedDescription)"
         }
         do {
-            issues = try await GitHubAPI.shared.issues(owner: repo.owner.login, repo: repo.name, token: token)
+            issues = try await GitHubAPI.shared.issues(
+                owner: repo.owner.login, repo: repo.name, token: auth.token
+            )
         } catch {
             issues = []
         }

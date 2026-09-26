@@ -1,11 +1,36 @@
 import SwiftUI
 
+/// README / 文件里的相对路径图片要拼成 raw.githubusercontent.com 才能加载，
+/// base 就是这个上下文（owner / repo / 分支）。
+struct MDBase {
+    let owner: String
+    let repo: String
+    let branch: String
+
+    func resolve(_ raw: String) -> URL? {
+        if let u = URL(string: raw), u.scheme != nil { return u }
+        var p = raw
+        if p.hasPrefix("./") { p = String(p.dropFirst(2)) }
+        if p.hasPrefix("/") { p = String(p.dropFirst()) }
+        guard !p.isEmpty else { return nil }
+        let enc = p.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? p
+        return URL(string: "https://raw.githubusercontent.com/\(owner)/\(repo)/\(branch)/\(enc)")
+    }
+}
+
 /// 极简 Markdown 渲染器（零依赖）
 /// 块级结构自己解析；行内语法交给 iOS 15 的 AttributedString(markdown:)
+///
+/// 解析只在 init 做一次——此前是计算属性，body 每求值一次就全量重解析，
+/// 长 README 加几十条评论时会明显掉帧。
 struct MarkdownView: View {
-    let text: String
+    let base: MDBase?
+    private let blocks: [MDBlock]
 
-    private var blocks: [MDBlock] { MDParser.parse(text) }
+    init(text: String, base: MDBase? = nil) {
+        self.base = base
+        self.blocks = MDParser.parse(text)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -20,12 +45,12 @@ struct MarkdownView: View {
     private func blockView(_ block: MDBlock) -> some View {
         switch block {
         case .heading(let level, let t):
-            Text(MDInline.attr(t))
+            Text(MDInline.attr(MDInline.plain(t)))
                 .font(.system(size: MDInline.headingSize(level), weight: .bold))
                 .padding(.top, level <= 2 ? 6 : 2)
 
         case .paragraph(let t):
-            Text(MDInline.attr(t))
+            Text(MDInline.attr(MDInline.plain(t)))
                 .fixedSize(horizontal: false, vertical: true)
 
         case .code(_, let code):
@@ -43,11 +68,20 @@ struct MarkdownView: View {
 
         case .bullet(let items):
             VStack(alignment: .leading, spacing: 4) {
-                ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
+                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                     HStack(alignment: .top, spacing: 6) {
-                        Text("•")
-                        Text(MDInline.attr(item)).fixedSize(horizontal: false, vertical: true)
+                        if let checked = item.checked {
+                            Image(systemName: checked ? "checkmark.square.fill" : "square")
+                                .font(.caption)
+                                .foregroundColor(checked ? .green : .secondary)
+                        } else {
+                            Text(item.depth == 0 ? "•" : "◦")
+                                .foregroundColor(.secondary)
+                        }
+                        Text(MDInline.attr(MDInline.plain(item.text)))
+                            .fixedSize(horizontal: false, vertical: true)
                     }
+                    .padding(.leading, CGFloat(min(item.depth, 4)) * 14)
                 }
             }
 
@@ -55,9 +89,11 @@ struct MarkdownView: View {
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
                     HStack(alignment: .top, spacing: 6) {
-                        Text("\(idx + 1).").monospacedDigit()
-                        Text(MDInline.attr(item)).fixedSize(horizontal: false, vertical: true)
+                        Text("\(idx + 1).").monospacedDigit().foregroundColor(.secondary)
+                        Text(MDInline.attr(MDInline.plain(item.text)))
+                            .fixedSize(horizontal: false, vertical: true)
                     }
+                    .padding(.leading, CGFloat(min(item.depth, 4)) * 14)
                 }
             }
 
@@ -66,7 +102,7 @@ struct MarkdownView: View {
                 Rectangle()
                     .fill(Color.secondary.opacity(0.5))
                     .frame(width: 3)
-                Text(MDInline.attr(t))
+                Text(MDInline.attr(MDInline.plain(t)))
                     .italic()
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -75,8 +111,55 @@ struct MarkdownView: View {
         case .rule:
             Divider().padding(.vertical, 2)
 
+        case .table(let header, let rows):
+            table(header: header, rows: rows)
+
         case .image(let alt, let url):
-            if let u = URL(string: url) {
+            imageView(alt: alt, url: url)
+        }
+    }
+
+    // MARK: 表格（GitHub README 里最常见的缺失项）
+
+    private func table(header: [String], rows: [[String]]) -> some View {
+        ScrollView(.horizontal, showsIndicators: true) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top, spacing: 0) {
+                    ForEach(0..<header.count, id: \.self) { c in
+                        Text(MDInline.attr(MDInline.plain(header[c])))
+                            .font(.caption.bold())
+                            .frame(minWidth: 90, maxWidth: 260, alignment: .leading)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 5)
+                    }
+                }
+                .background(Color(UIColor.secondarySystemBackground))
+                Divider()
+                ForEach(0..<rows.count, id: \.self) { r in
+                    HStack(alignment: .top, spacing: 0) {
+                        ForEach(0..<header.count, id: \.self) { c in
+                            Text(MDInline.attr(MDInline.plain(c < rows[r].count ? rows[r][c] : "")))
+                                .font(.caption)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(minWidth: 90, maxWidth: 260, alignment: .leading)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 5)
+                        }
+                    }
+                    Divider()
+                }
+            }
+            .fixedSize(horizontal: true, vertical: false)
+        }
+    }
+
+    // MARK: 图片
+
+    private func imageView(alt: String, url: String) -> some View {
+        let absolute = URL(string: url).flatMap { $0.scheme == nil ? nil : $0 }
+        let resolved = base.flatMap { $0.resolve(url) } ?? absolute
+        return Group {
+            if let u = resolved {
                 AsyncImage(url: u) { phase in
                     switch phase {
                     case .success(let img):
@@ -84,7 +167,7 @@ struct MarkdownView: View {
                     case .failure:
                         Text("🖼 \(alt)").font(.caption).foregroundColor(.secondary)
                     case .empty:
-                        ProgressView()
+                        HStack { Spacer(); ProgressView(); Spacer() }
                     @unknown default:
                         EmptyView()
                     }
@@ -94,196 +177,5 @@ struct MarkdownView: View {
                 Text("🖼 \(alt)").font(.caption).foregroundColor(.secondary)
             }
         }
-    }
-}
-
-// MARK: - 行内渲染
-
-enum MDInline {
-    static func attr(_ s: String) -> AttributedString {
-        let opts = AttributedString.MarkdownParsingOptions(
-            interpretedSyntax: .inlineOnlyPreservingWhitespace
-        )
-        if let a = try? AttributedString(markdown: s, options: opts) { return a }
-        return AttributedString(s)
-    }
-
-    static func headingSize(_ level: Int) -> CGFloat {
-        switch level {
-        case 1: return 24
-        case 2: return 20
-        case 3: return 18
-        default: return 16
-        }
-    }
-}
-
-// MARK: - 块级解析
-
-enum MDBlock {
-    case heading(level: Int, text: String)
-    case paragraph(String)
-    case code(lang: String, text: String)
-    case bullet([String])
-    case ordered([String])
-    case quote(String)
-    case rule
-    case image(alt: String, url: String)
-}
-
-enum MDParser {
-    static func parse(_ src: String) -> [MDBlock] {
-        let lines = src
-            .replacingOccurrences(of: "\r\n", with: "\n")
-            .split(separator: "\n", omittingEmptySubsequences: false)
-            .map(String.init)
-
-        var blocks: [MDBlock] = []
-        var para: [String] = []
-        var i = 0
-
-        func flushPara() {
-            if !para.isEmpty {
-                blocks.append(.paragraph(para.joined(separator: "\n")))
-                para = []
-            }
-        }
-
-        while i < lines.count {
-            let line = lines[i]
-            let t = line.trimmingCharacters(in: .whitespaces)
-
-            // 代码块
-            if t.hasPrefix("```") {
-                flushPara()
-                let lang = String(t.dropFirst(3)).trimmingCharacters(in: .whitespaces)
-                var code: [String] = []
-                i += 1
-                while i < lines.count,
-                      !lines[i].trimmingCharacters(in: .whitespaces).hasPrefix("```") {
-                    code.append(lines[i])
-                    i += 1
-                }
-                i += 1
-                blocks.append(.code(lang: lang, text: code.joined(separator: "\n")))
-                continue
-            }
-
-            // 空行
-            if t.isEmpty {
-                flushPara()
-                i += 1
-                continue
-            }
-
-            // 标题
-            if let level = headingLevel(t) {
-                flushPara()
-                let body = String(t.dropFirst(level)).trimmingCharacters(in: .whitespaces)
-                blocks.append(.heading(level: level, text: body))
-                i += 1
-                continue
-            }
-
-            // 分割线
-            if isRule(t) {
-                flushPara()
-                blocks.append(.rule)
-                i += 1
-                continue
-            }
-
-            // 引用
-            if t.hasPrefix(">") {
-                flushPara()
-                var q: [String] = []
-                while i < lines.count {
-                    let lt = lines[i].trimmingCharacters(in: .whitespaces)
-                    guard lt.hasPrefix(">") else { break }
-                    q.append(String(lt.dropFirst()).trimmingCharacters(in: .whitespaces))
-                    i += 1
-                }
-                blocks.append(.quote(q.joined(separator: "\n")))
-                continue
-            }
-
-            // 无序列表
-            if isBullet(t) {
-                flushPara()
-                var items: [String] = []
-                while i < lines.count, isBullet(lines[i].trimmingCharacters(in: .whitespaces)) {
-                    let lt = lines[i].trimmingCharacters(in: .whitespaces)
-                    items.append(String(lt.dropFirst(2)))
-                    i += 1
-                }
-                blocks.append(.bullet(items))
-                continue
-            }
-
-            // 有序列表
-            if orderedBody(t) != nil {
-                flushPara()
-                var items: [String] = []
-                while i < lines.count,
-                      let r = orderedBody(lines[i].trimmingCharacters(in: .whitespaces)) {
-                    items.append(r)
-                    i += 1
-                }
-                blocks.append(.ordered(items))
-                continue
-            }
-
-            // 独占一行的图片
-            if let img = imageParts(t) {
-                flushPara()
-                blocks.append(.image(alt: img.0, url: img.1))
-                i += 1
-                continue
-            }
-
-            para.append(line)
-            i += 1
-        }
-        flushPara()
-        return blocks
-    }
-
-    private static func headingLevel(_ s: String) -> Int? {
-        var n = 0
-        for ch in s {
-            if ch == "#" { n += 1 } else { break }
-        }
-        guard n >= 1, n <= 6, s.count > n else { return nil }
-        let idx = s.index(s.startIndex, offsetBy: n)
-        return s[idx] == " " ? n : nil
-    }
-
-    private static func isRule(_ s: String) -> Bool {
-        let t = s.replacingOccurrences(of: " ", with: "")
-        guard t.count >= 3 else { return false }
-        let set = Set(t)
-        return (set == ["-"] || set == ["*"] || set == ["_"])
-    }
-
-    private static func isBullet(_ s: String) -> Bool {
-        s.hasPrefix("- ") || s.hasPrefix("* ") || s.hasPrefix("+ ")
-    }
-
-    private static func orderedBody(_ s: String) -> String? {
-        // 形如 "1. xxx"
-        guard let dot = s.range(of: ".") else { return nil }
-        let num = String(s[s.startIndex..<dot.lowerBound])
-        guard !num.isEmpty, num.allSatisfy({ $0.isNumber }) else { return nil }
-        let after = s.index(after: dot.lowerBound)
-        guard after < s.endIndex, s[after] == " " else { return nil }
-        return String(s[s.index(after: after)...])
-    }
-
-    private static func imageParts(_ s: String) -> (String, String)? {
-        guard s.hasPrefix("![") else { return nil }
-        guard let close = s.range(of: "]("), s.hasSuffix(")") else { return nil }
-        let alt = String(s[s.index(s.startIndex, offsetBy: 2)..<close.lowerBound])
-        let url = String(s[close.upperBound..<s.index(before: s.endIndex)])
-        return (alt, url)
     }
 }

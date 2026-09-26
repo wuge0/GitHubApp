@@ -14,6 +14,11 @@ on:
 permissions:
   contents: read
 
+# 连续 push 时取消上一次未跑完的构建，别白烧 macOS 时长
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   SCHEME: GitHubApp
   WORKSPACE: ""                  # 纯 .xcodeproj 工程，留空
@@ -33,6 +38,12 @@ jobs:
         run: |
           xcodebuild -version
           xcodebuild -showsdks | grep -i ios || true
+
+      - name: 版本号自增（方便 TrollStore 覆盖安装）
+        run: |
+          set -euo pipefail
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" GitHubApp/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" GitHubApp/Info.plist
 
       - name: Archive（跳过签名）
         run: |
