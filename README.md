@@ -4,14 +4,12 @@
 
 ## 功能
 
-五个 Tab：**搜索 / 趋势 / 动态 / 我的 / 设置**
+四个 Tab：**探索 / 动态 / 我的 / 设置**
 
-### 搜索
-- 关键词搜索仓库，按 star 排序，显示 owner 头像、描述、star / fork / 语言
-
-### 趋势
-- 用 `search` 接口按「创建时间 + star 数」模拟 Trending（GitHub 无官方 trending API）
-- 可切 今日 / 本周 / 本月，可按语言筛选（Swift / Kotlin / Python / Go / Rust …）
+### 探索（首页）
+- 顶部表头：指南针图标 + 分段控件（仓库 / 开发者）+ 搜索按钮（点开独立搜索页）
+- 「仓库」段：用 `search` 接口按「创建时间 + star 数」模拟 Trending（GitHub 无官方 trending API），可切 今日 / 本周 / 本月、按语言筛选（Swift / Kotlin / Python / Go / Rust …）
+- 「开发者」段：按 followers 降序列出热门开发者，点进用户主页
 
 ### 动态
 - **动态**：`/users/{login}/events`，按事件类型给图标与中文动词（star / fork / push / issue / PR / release）
@@ -39,16 +37,17 @@
 GitHubApp.xcodeproj/                 Xcode 工程 + 共享 scheme
 GitHubApp/
   GitHubAppApp.swift                 @main 入口
-  ContentView.swift                  TabView 根容器（5 个 Tab）
+  ContentView.swift                  TabView 根容器（4 个 Tab）
   Models.swift                       Repo / Issue / User / Event / Comment / Notification
   GitHubAPI.swift                    网络层：URLComponents 拼查询、超时与响应缓存、分页
   TokenStore.swift                   Keychain 封装 + TokenStore + SessionStore（login 缓存）
   Extensions.swift                   timeAgo / parseIssueURL / orNil / compactCount
   PlaceholderView.swift              统一的加载态 / 空态 / 错误态 / 加载更多
-  SearchView.swift                   搜索页 + 仓库行（分页）
+  SearchView.swift                   搜索页 + 仓库行（分页，从探索页的搜索按钮进入）
+  ExploreView.swift                  探索页（仓库/开发者分段 + 趋势榜 + 搜索入口）
   RepoDetailView.swift               仓库详情（README / 文件 / Issues）
   UserViews.swift                    个人中心 + 用户主页 + 用户行（四路并行 + 分页）
-  TrendingView.swift                 趋势榜（切换筛选取消上一次请求 + 分页）
+  TrendingView.swift                 趋势榜（保留为可复用组件，切换筛选取消上一次请求 + 分页）
   DynamicView.swift                  动态流 + 通知
   IssueDetailView.swift              Issue 正文与评论
   MarkdownParser.swift               Markdown 块级解析器（零依赖）

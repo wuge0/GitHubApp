@@ -25,6 +25,7 @@
 		B100000000000000000000D7 /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000C7 /* MarkdownParser.swift */; };
 		B100000000000000000000D8 /* TrendingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000C8 /* TrendingView.swift */; };
 		B100000000000000000000D9 /* DynamicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000C9 /* DynamicView.swift */; };
+		B100000000000000000000DA /* ExploreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000000CA /* ExploreView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +47,7 @@
 		B100000000000000000000C7 /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
 		B100000000000000000000C8 /* TrendingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendingView.swift; sourceTree = "<group>"; };
 		B100000000000000000000C9 /* DynamicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicView.swift; sourceTree = "<group>"; };
+		B100000000000000000000CA /* ExploreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreView.swift; sourceTree = "<group>"; };
 		B100000000000000000000AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B100000000000000000000A9 /* GitHubApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitHubApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -90,6 +92,7 @@
 				B100000000000000000000C7 /* MarkdownParser.swift */,
 				B100000000000000000000C8 /* TrendingView.swift */,
 				B100000000000000000000C9 /* DynamicView.swift */,
+				B100000000000000000000CA /* ExploreView.swift */,
 				B100000000000000000000AA /* Assets.xcassets */,
 			);
 			path = GitHubApp;
@@ -189,6 +192,7 @@
 				B100000000000000000000D7 /* MarkdownParser.swift in Sources */,
 				B100000000000000000000D8 /* TrendingView.swift in Sources */,
 				B100000000000000000000D9 /* DynamicView.swift in Sources */,
+				B100000000000000000000DA /* ExploreView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

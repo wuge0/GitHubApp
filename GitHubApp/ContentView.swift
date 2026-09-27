@@ -3,13 +3,9 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         TabView {
-            SearchView()
+            ExploreView()
                 .tabItem {
-                    Label("搜索", systemImage: "magnifyingglass")
-                }
-            TrendingView()
-                .tabItem {
-                    Label("趋势", systemImage: "chart.line.uptrend.xyaxis")
+                    Label("探索", systemImage: "safari")
                 }
             DynamicView()
                 .tabItem {

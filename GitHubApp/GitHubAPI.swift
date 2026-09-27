@@ -87,6 +87,20 @@ final class GitHubAPI {
         return try decoder.decode(SearchResponse.self, from: data).items
     }
 
+    /// 探索页「开发者」段：按 followers 降序模拟「热门开发者」（GitHub 无官方 trending users API）
+    func searchUsers(query: String, page: Int = 1, token: String) async throws -> [User] {
+        struct SearchUsersResponse: Codable {
+            let items: [User]
+        }
+        let data = try await get(
+            "/search/users",
+            query: ["q": query, "sort": "followers", "order": "desc",
+                    "per_page": "30", "page": "\(page)"],
+            token: token
+        )
+        return try decoder.decode(SearchUsersResponse.self, from: data).items
+    }
+
     // MARK: - 仓库
 
     func issues(owner: String, repo: String, page: Int = 1, token: String) async throws -> [Issue] {
