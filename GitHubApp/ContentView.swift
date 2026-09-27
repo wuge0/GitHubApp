@@ -7,6 +7,10 @@ struct ContentView: View {
                 .tabItem {
                     Label("探索", systemImage: "safari")
                 }
+            TrendingView()
+                .tabItem {
+                    Label("趋势", systemImage: "flame")
+                }
             DynamicView()
                 .tabItem {
                     Label("动态", systemImage: "bell")
@@ -14,10 +18,6 @@ struct ContentView: View {
             MeView()
                 .tabItem {
                     Label("我的", systemImage: "person")
-                }
-            SettingsView()
-                .tabItem {
-                    Label("设置", systemImage: "gear")
                 }
         }
     }

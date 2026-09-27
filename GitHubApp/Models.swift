@@ -61,12 +61,14 @@ struct User: Codable, Identifiable, Hashable {
     let followers: Int?
     let following: Int?
     let htmlUrl: String?
+    let createdAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id, login, name, bio, followers, following
         case avatarUrl = "avatar_url"
         case publicRepos = "public_repos"
         case htmlUrl = "html_url"
+        case createdAt = "created_at"
     }
 }
 

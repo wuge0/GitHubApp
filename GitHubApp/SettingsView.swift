@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject private var auth = TokenStore.shared
+    @Environment(\.dismiss) private var dismiss
     @State private var draft: String = ""
 
     private var version: String {
@@ -20,12 +21,6 @@ struct SettingsView: View {
                         draft = ""
                     }
                     .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
-                    if !auth.token.isEmpty {
-                        Button("清除已保存的 Token", role: .destructive) {
-                            auth.clear()
-                            draft = ""
-                        }
-                    }
                 } header: {
                     Text("访问令牌")
                 } footer: {
@@ -40,8 +35,23 @@ struct SettingsView: View {
                     }
                     Link("创建 Token", destination: URL(string: "https://github.com/settings/tokens")!)
                 }
+
+                Section {
+                    Button(role: .destructive) {
+                        auth.clear()
+                        dismiss()
+                    } label: {
+                        HStack { Spacer(); Text("退出登录"); Spacer() }
+                    }
+                    .disabled(auth.token.isEmpty)
+                }
             }
             .navigationTitle("设置")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("完成") { dismiss() }
+                }
+            }
             .onAppear { draft = "" }
         }
     }

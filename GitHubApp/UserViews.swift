@@ -34,9 +34,10 @@ struct UserPageView: View {
     var body: some View {
         VStack(spacing: 0) {
             if let u = user {
-                ProfileHeader(user: u)
-                    .padding(.horizontal)
-                    .padding(.vertical, 10)
+                ProfileHeader(user: u) { idx in
+                    if UserTab(rawValue: idx) != nil { tab = idx }
+                }
+                .padding(.vertical, 10)
             }
             Picker("分类", selection: $tab) {
                 Text("仓库").tag(0)
@@ -205,40 +206,73 @@ struct UserPageView: View {
     }
 }
 
+/// 个人头部卡片：参考 ExistOrLive/GithubClient 的 ZLProfileHeaderCell
+/// —— 黑色卡片 + 头像 + 名字 + 加入时间 + 一行可点数据块（仓库/Star/粉丝/关注），点数据块跳到对应分段。
 struct ProfileHeader: View {
     let user: User
+    /// 点数据块时回调，参数是分段下标（0 仓库 / 1 Star / 2 粉丝 / 3 关注）
+    var onStatTap: ((Int) -> Void)? = nil
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            AsyncImage(url: URL(string: user.avatarUrl)) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                Color.secondary.opacity(0.15)
-            }
-            .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 14) {
+                AsyncImage(url: URL(string: user.avatarUrl)) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    Color.white.opacity(0.15)
+                }
+                .frame(width: 64, height: 64)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(user.name ?? user.login)
-                    .font(.headline)
-                Text("@\(user.login)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                if let bio = user.bio, !bio.isEmpty {
-                    Text(bio)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(user.name ?? user.login)
+                        .font(.title3.bold())
+                        .foregroundColor(.white)
+                    Text("@\(user.login)")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                    if let c = user.createdAt, !timeAgo(c).isEmpty {
+                        Text("\(timeAgo(c))加入")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
                 }
-                HStack(spacing: 14) {
-                    if let r = user.publicRepos { Label("\(r)", systemImage: "book.closed") }
-                    if let f = user.followers { Label("\(f)", systemImage: "person.2") }
-                    if let g = user.following { Label("\(g)", systemImage: "person.badge.plus") }
-                }
-                .font(.caption2)
-                .foregroundColor(.secondary)
+                Spacer()
             }
-            Spacer()
+
+            if let bio = user.bio, !bio.isEmpty {
+                Text(bio)
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.85))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(spacing: 0) {
+                statChip("仓库", user.publicRepos, 0)
+                statChip("Star", nil, 1)
+                statChip("粉丝", user.followers, 2)
+                statChip("关注", user.following, 3)
+            }
+        }
+        .padding(16)
+        .background(Color.black)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal)
+    }
+
+    private func statChip(_ title: String, _ value: Int?, _ idx: Int) -> some View {
+        Button {
+            onStatTap?(idx)
+        } label: {
+            VStack(spacing: 3) {
+                Text(value.map { compactCount($0) } ?? "·")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Text(title)
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .frame(maxWidth: .infinity)
         }
     }
 }
@@ -267,24 +301,102 @@ struct UserRow: View {
     }
 }
 
-/// "我的" Tab 根视图：没填 Token 时引导去设置
+/// "我的" Tab 根视图：
+/// - 未登录 → 登录页（LoginView）
+/// - 已登录 → 个人主页（UserPageView），右上角齿轮进入设置（含清除 Token = 退出登录）
 struct MeView: View {
     @ObservedObject private var auth = TokenStore.shared
+    @State private var showSettings = false
 
     var body: some View {
         NavigationView {
-            Group {
-                if auth.token.isEmpty {
-                    EmptyStateView(
-                        systemImage: "person.crop.circle.badge.questionmark",
-                        text: "需要在「设置」里填入 GitHub Token，只需 repo 与 read:user 权限"
-                    )
-                } else {
-                    UserPageView(login: nil)
-                }
+            if auth.token.isEmpty {
+                LoginView()
+            } else {
+                UserPageView(login: nil)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button {
+                                showSettings = true
+                            } label: {
+                                Image(systemName: "gearshape")
+                            }
+                        }
+                    }
             }
-            .navigationTitle("我的")
-            .navigationBarTitleDisplayMode(.inline)
+        }
+        .navigationViewStyle(.stack)
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
+    }
+}
+
+/// 登录页：未登录时「我的」Tab 的根视图。
+/// 用 GitHub Personal Access Token 登录，先打一次 /user 验证有效，通过后存入本机钥匙串，
+/// MeView 因观察到 token 变化会自动切换到个人主页。
+struct LoginView: View {
+    @ObservedObject private var auth = TokenStore.shared
+    @State private var token = ""
+    @State private var verifying = false
+    @State private var errorText: String?
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 22) {
+                Image(systemName: "cat.circle.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.accentColor)
+                Text("登录 GitHub")
+                    .font(.title2.bold())
+                Text("本应用通过 Personal Access Token 登录，只需 repo 与 read:user 权限。Token 仅保存在本机钥匙串，不上传任何服务器。")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                SecureField("粘贴 Personal Access Token", text: $token)
+                    .textFieldStyle(.roundedBorder)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                if let e = errorText {
+                    Text(e)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                Button {
+                    Task { await login() }
+                } label: {
+                    HStack {
+                        if verifying { ProgressView().tint(.white) }
+                        Text(verifying ? "验证中…" : "登录")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(token.trimmingCharacters(in: .whitespaces).isEmpty || verifying)
+                Link("去 GitHub 创建 Token", destination: URL(string: "https://github.com/settings/tokens")!)
+                    .font(.subheadline)
+                Text("不登录也能以游客身份浏览公开仓库，但限额仅 60 次/小时。")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(28)
+        }
+        .navigationTitle("登录")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func login() async {
+        let t = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        verifying = true
+        defer { verifying = false }
+        do {
+            _ = try await GitHubAPI.shared.me(token: t)
+            auth.save(t)
+            errorText = nil
+        } catch {
+            errorText = "登录失败：\(error.localizedDescription)"
         }
     }
 }
